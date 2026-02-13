@@ -99,6 +99,30 @@ def load_data():
     clusters = pd.read_csv('data/looker_cluster_performance.csv')
     weekly = pd.read_csv('data/looker_weekly_trend.csv')
     monthly_cluster = pd.read_csv('data/looker_monthly_by_cluster.csv')
+
+    # Ensure numeric columns are numeric
+    for df in [monthly, weekly, monthly_cluster]:
+        for col in ['clicks', 'impressions', 'avg_position', 'ctr']:
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+
+    if 'unique_pages' in monthly.columns:
+        monthly['unique_pages'] = pd.to_numeric(monthly['unique_pages'], errors='coerce').fillna(0).astype(int)
+
+    for col in ['total_clicks', 'total_impressions', 'avg_position', 'ctr']:
+        if col in pages.columns:
+            pages[col] = pd.to_numeric(pages[col], errors='coerce').fillna(0)
+
+    for col in ['total_clicks', 'total_impressions', 'avg_position', 'ctr', 'clicks_per_page', 'avg_word_count', 'pages']:
+        if col in clusters.columns:
+            clusters[col] = pd.to_numeric(clusters[col], errors='coerce').fillna(0)
+
+    # Ensure string columns are strings
+    for df in [monthly, pages]:
+        for col in ['month', 'subdomain', 'section', 'content_type']:
+            if col in df.columns:
+                df[col] = df[col].astype(str)
+
     return monthly, pages, clusters, weekly, monthly_cluster
 
 monthly, pages, clusters, weekly, monthly_cluster = load_data()
@@ -325,7 +349,7 @@ elif page_selection == "📂 WWW Sections":
     # Section summary table
     section_summary = monthly[monthly['subdomain'] == 'www'].groupby('section').agg(
         total_clicks=('clicks', 'sum'),
-        unique_pages=('unique_pages', 'max')
+        unique_pages=('unique_pages', 'sum')
     ).reset_index().sort_values('total_clicks', ascending=False)
     section_summary['pct'] = (section_summary['total_clicks'] / section_summary['total_clicks'].sum() * 100).round(1)
 
